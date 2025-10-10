@@ -1,0 +1,163 @@
+
+  /* ======= PIXEL ART THEME ======= */
+  ::root {
+    --bg-color: #f0efe9;        /* Soft off-white background */
+    --panel-bg: #e0ded5;       /* Slightly darker panel background */
+    --accent: #a3c9c0;         /* Soft muted teal */
+    --accent-dark: #7ea69a;    /* Darker accent for borders / hover */
+    --text-color: #333333;     /* Dark text for readability */
+    --border-color: #000000;   /* Accent border */
+  }
+
+
+
+  body {
+    font-family: 'Press Start 2P', monospace;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+    font-size: 10px;
+  }
+
+  h1, h2, h3, h4, p {
+    margin: 5px 0;
+    text-align: center;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  /* ======= STRUCTURE ======= */
+  .app-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+  }
+
+  .scanner-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+  }
+
+  .video-section,
+  .detection-section,
+  .match-section {
+    background-color: var(--card-bg);
+    border: 2px solid var(--border-color);
+    padding: 10px;
+    align-items: center;
+    text-align: center;
+    box-shadow: none;
+  }
+
+  /* ======= VIDEO + IMAGES ======= */
+  video, canvas {
+    border: 2px solid var(--accent);
+    width: 320px;
+    height: 240px;
+    background-color: black;
+  }
+
+  .FramePreview, .CropPreview {
+    width: 300px;
+    height: 225px;
+    object-fit: contain;
+    border: 2px solid var(--accent-dark);
+  }
+
+  .preview-img {
+    max-width: 100%;
+  }
+
+  /* ======= DETECTION LAYOUT ======= */
+  .detection-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 650px;
+  }
+
+  .detection-images {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .detection-images > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ======= BUTTONS ======= */
+  .videoControls {
+    width: 130px;
+    padding: 10px;
+    background-color: var(--accent);
+    color: black;
+    border: 2px solid var(--border-color);
+    font-size: 10px;
+    font-family: 'Press Start 2P', monospace;
+    margin: 10px;
+    text-transform: uppercase;
+  }
+
+  .videoControls:hover {
+    background-color: var(--accent-dark);
+    color: var(--text-color);
+  }
+
+  .flex-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  /* ======= MATCH CARDS ======= */
+  .matches-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 470px;
+    overflow-y: auto;
+  }
+
+  .match-card {
+    background-color: var(--bg-color);
+    border: 2px solid var(--accent);
+    padding: 8px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    font-size: 10px;
+  }
+
+  .match-card span {
+    display: inline-block;
+    margin: 2px;
+    white-space: nowrap;
+  }
+
+  /* ======= DEBUG STRING FIELDS ======= */
+  .B64String {
+    background-color: --bg-color;
+    border: 1px solid var(--accent);
+    color: var(--text-color);
+    padding: 10px;
+    height: 125px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 9px;
+  }
+
+  .StringOutput {
+    margin-top: 10px;
+  }
+

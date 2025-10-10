@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Webcam Frame Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        video {
+            border: 2px solid black;
+            width: 318px;
+            height: 240px;
+            text-align: left;
+            padding: 1px;
+        }
+        .VideoOutput {
+            float: left;
+        }
+        .StringOutput {
+            float: left;
+            width: 300px;
+            height: 220px;
+            border: 2px solid black;
+            overflow: auto;
+            padding: 10px;
+        }
+        .B64String{
+            text-align: left;
+            margin: 20px auto;
+            max-width: 280px;
+            height: 125px;
+            background-color: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #161515;
+            overflow-wrap: anywhere;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .videoControls{
+            width: 90px;
+            height: 25px;
+            border-radius: 10px;
+            background-color: rgb(126, 150, 93);
+        }
+        .FramePreview{
+            border: 2px solid red;
+            min-width: 300px;
+            min-height: 225px;
+            max-width: 300px;
+            max-height: 225px;
+        }
+        .CropPreview{
+            border: 2px solid red;
+            min-width: 300px;
+            min-height: 416px;
+            max-width: 300px;
+            max-height: 416px;
+        }
+        .DetectionStackImages{
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div style="width: 320px;">
+
+        <div style="display:inline-flex; gap:20px;">
+            
+            <div class="VideoOutput" style="margin-bottom: 5px;">
+                <h2>Video</h2>
+                
+                <!--Buttons to start and stop the webcam scanning-->
+                <div style="display: inline-flex; gap: 60px; margin-bottom: 10px;">
+                    <button class="videoControls" id="videoStart">
+                        Start Scan
+                    </button>
+                    <button class="videoControls" id="videoEnd" style="background-color: rgb(186, 72, 72);">
+                        End Scan
+                    </button>
+                </div>
+                
+                <!--Webcam window showing the frames, this has the highest fps of all webcam 
+                type renders on the page and should be smooth and clean-->
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+            </div>
+
+            <!--This is two constantly updating images of the current frame being processed this has a slower fps
+            as the api call associated with it takes some time and lag needs to be prevented-->
+            <div class="DetectionStackImages">
+
+                <div>
+
+                    <!-- A String field of whether a card was detected in the frame either true, false of None if 
+                     the user has not started scanning with the button yet-->
+                    <h3 id="frameDetectionCardPresent">Detected Content: None</h2>
+
+                    <!--This is the current frame after being returned from the backend, if a card is detected a green 
+                    bounding box will be drawn-->
+                    <img class="FramePreview" id="frameDetectionBox" src="" alt="Start Scan"/>
+
+                </div>
+
+                <!--This is the current frame after being returned from the backend however it has been cropped down
+                to the first detected bounding box, if no card is detected this should not update from the last image, 
+                and should be blank if a video has not started yet-->
+                <div>
+                    <h3>Cropped Detection</h2>
+                    <img class="CropPreview" id="frameDetectionCrop" src="" alt="Start Scan"/>
+                </div>
+
+            </div>
+
+            <!--This is two constantly updating images of the current frame being processed by a slightly more 
+            resource intensive backend function and typically takes 2-5 seconds to process and return images so 
+            it updates slower the goal of these is to show to the user which frame exactly lead to the results
+            unlike the previous ones which were more for the user to help align content. The api call that 
+            updates these images is called again after the previous call finishes unike the previous image fields 
+            that update on an interval-->
+           <div class="DetectionStackImages">
+
+                <div>
+
+                     <!-- A String field of whether a card was detected in the frame either true, false of None if 
+                     the user has not started scanning with the button yet-->
+                    <h3 id="cardDetected">Detected Content: None</h2>
+
+                     <!--This is the frame that is responsible for the matching results-->
+                    <img class="FramePreview" id="detectionUsed" src="" alt="Start Scan"/>
+
+                </div>
+
+                <!--This is the cropped frame that is responsible for the matching results-->
+                <div>
+                    <h3>Cropped Detection</h2>
+                    <img class="CropPreview" id="cropUsed" src="" alt="Start Scan"/>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div style="
+            margin: 20px; margin-left: 0;
+            display: flex; align-items: center; width: 1000px; gap: 20px;">
+           
+            <div style="width: 325px;">
+
+                <!--This is the b64string for the current video frame (fast updating) 
+                not neccessary for the user to see but good for debugging-->
+                <div class="StringOutput" style="margin-top: 10px;">
+                    
+                    <h1>Video Frame</h1> 
+                    <div class="B64String" id="rawFrame"></div>
+                
+                </div>
+
+                <!--This is the full api response for the first api call (faster one)
+                it includes things like the frame withdetection bounding box b64 string
+                true false if a card is detected and the b64 string of the cropped card image
+                This is also not neccessary for users to see but useful for debugging-->
+                <div class="StringOutput" style="margin-top: 10px;">
+                    
+                    <h1>Detection Feedback</h1> 
+                    <div class="B64String" id="responseFeedback"></div>
+                
+                </div>
+
+           </div>
+
+
+           <div class="StringOutput" style="margin-top: 10px; height: 472px; width: 325px;">
+                
+                <!--This is the full api response for the slower api call that is not set on an interval
+                this updates when a new card has been processed and returns a similar structure to the previous 
+                'responseFeedback' div however it contains the matches field which is a core part of the application
+                and tells the user which cards their detection matched closely too-->
+                <h1>Matching Feedback</h1>      
+                <div class="B64String" id="responseFull" style="height: 400px;"></div>
+           
+            </div>
+
+            <div class="StringOutput" style="margin-top: 10px; height: 472px; width: 325px;">
+                
+                <!--This is just the matches from the previous api response it contains a structure of 
+                class Match(BaseModel):
+                    id: str #Card ID
+                    name: str # Card Name
+                    score: float #Cosine similarity
+                and is important for the user to see, this is a list of five of these base model classes for the top five matches-->
+                <h1>Matches</h1> <p id="callTime">Null</p>
+                <div class="B64String" id="matches" style="height: 400px;"></div>
+          
+            </div>
+
+        </div>
+
+    </div>
+
+    <!--JavaScript File-->
+    <script src = "script.js"></script>
+
+</body>
+</html>

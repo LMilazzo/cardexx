@@ -1,0 +1,170 @@
+ /* ======= THEME VARIABLES ======= */
+    :root {
+      --bg-color: #0d0d0d;
+      --accent: #00ffff;
+      --accent-alt: #ff00ff;
+      --card-bg: rgba(20, 20, 20, 0.7);
+      --text-color: #f0f0f0;
+      --border-color: var(--accent);
+      --glow: 0 0 10px var(--accent), 0 0 20px var(--accent-alt);
+    }
+
+    /* ======= GLOBAL STYLES ======= */
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    h1, h2, h3 {
+      margin: 5px 0;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    /* ======= LAYOUT GRID ======= */
+    .app-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .scanner-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+    }
+
+    .video-section,
+    .detection-section,
+    .match-section {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: var(--glow);
+      align-items: center;
+      text-align: center;
+    }
+
+    .video-section video,
+    .video-section canvas {
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      width: 320px;
+      height: 240px;
+      background-color: black;
+    }
+
+    .preview-img {
+      border: 2px solid var(--accent-alt);
+      border-radius: 8px;
+      max-width: 100%;
+    }
+
+    /* Buttons */
+    .videoControls {
+      width: 120px;
+      padding: 8px;
+      border: none;
+      border-radius: 10px;
+      margin: 15px;
+      background: linear-gradient(to right, #00ffff, #ff00ff);
+      color: #000;
+      font-weight: bold;
+      box-shadow: var(--glow);
+      transition: 0.3s ease;
+      align-items: center;
+    }
+
+    .videoControls:hover {
+      transform: scale(1.05);
+    }
+
+    /* Output fields */
+    .B64String {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--accent);
+      color: #00ffea;
+      padding: 10px;
+      border-radius: 6px;
+      height: 125px;
+      overflow-y: auto;
+      font-size: 12px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .StringOutput {
+      margin-top: 15px;
+    }
+
+    /* Flex rows inside sections */
+    .flex-row {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    /* Adjusting image sizes */
+    .FramePreview, .CropPreview {
+      width: 300px;
+      height: 225px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 2px solid var(--accent-alt);
+    }
+
+    .detection-section {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: var(--glow);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 650px; /* Enough to hold both images side-by-side */
+    }
+
+    .detection-images {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+
+    /* ======= Match Cards ======= */
+    .matches-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 470px;
+      overflow-y: auto;
+    } 
+
+    .match-card {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--accent);
+      padding: 10px 12px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px var(--accent-alt);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .match-card span {
+      display: inline-block;
+      margin: 2px 5px;
+      white-space: nowrap;
+    }
+

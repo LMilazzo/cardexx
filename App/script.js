@@ -26,6 +26,7 @@ const detectionUsed = document.getElementById('detectionUsed')
 const cardDetected = document.getElementById('cardDetected')
 const cropUsed = document.getElementById('cropUsed')
 const callTime = document.getElementById('callTime')
+const matchesContainer = document.getElementById("matches");
 
 let streamStarted = false;
 let intervalID_video = null; //Interval for the video FPS 66
@@ -87,11 +88,12 @@ function detectCard(){
       .then(data => {
         apiResponse.textContent = JSON.stringify(data, null, 2);
         frameDetectionBox.src = "data:image/png;base64," + data.Frame.b64_string;
-        frameDetectionCardPresent.textContent = "Detected Content: " + data.Card_Detected;
+        frameDetectionCardPresent.textContent = "Detected Content For Matching: " + data.Card_Detected;
         if (data.Cropped_Card != null){
           frameDetectionCrop.src = "data:image/png;base64," + data.Cropped_Card.b64_string;
           cardPresent = true;
         }else {cardPresent = false; }
+
       })
       .catch(error => {
         apiResponse.textContent = 'There was an error with the request';
@@ -140,6 +142,19 @@ async function getResults() {
 
     if (data.Matches != null) {
       matches.textContent = JSON.stringify(data.Matches, null, 2);
+
+      matchesContainer.innerHTML = ""; // Clear previous
+
+      data.Matches.forEach(match => {
+        const card = document.createElement("div");
+        card.className = "match-card";
+        card.innerHTML = `
+          <span><strong>Name:</strong> ${match.name}</span>
+          <span><strong>ID:</strong> ${match.id}</span>
+          <span><strong>Score:</strong> ${match.score.toFixed(3)}</span>
+        `;
+        matchesContainer.appendChild(card);
+      });
     }
 
     callTime.textContent = "Call Duration: " + data.Duration.toFixed(2) + "s";
