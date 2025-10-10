@@ -1,0 +1,404 @@
+from fastapi import FastAPI, UploadFile, File, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from PIL import Image, UnidentifiedImageError
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+import pandas as pd
+import time
+import faiss
+from ultralytics import YOLO
+from pydantic import BaseModel
+from typing import Optional
+import numpy as np
+import base64
+import cv2
+import io
+import re
+
+#-------------------------------------------------------------------------
+
+#Setup
+app = FastAPI()
+
+origins = [
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,     # allow your frontend origin(s)
+    allow_credentials=True,
+    allow_methods=["*"],       # allow POST, OPTIONS, etc.
+    allow_headers=["*"],
+)
+
+
+det_model = YOLO("card_detection.pt")
+encode_model = SentenceTransformer("clip-ViT-L-14")
+
+# 1. Load and stack embeddings
+library = pd.read_parquet("MASTER_SET.parquet")
+embedding_matrix_library = np.vstack(library["embedding"].values)
+
+# 2. Normalize BEFORE adding to index
+faiss.normalize_L2(embedding_matrix_library)
+
+# 3. Create FAISS index for cosine similarity
+dimension = embedding_matrix_library.shape[1]
+index = faiss.IndexFlatIP(dimension)  # Inner Product
+index.add(embedding_matrix_library)   # Now they're normalized
+
+#-------------------------------------------------------------------------
+
+#Validation Model
+class B64String(BaseModel):
+    b64_string: str
+
+#Helper for image encoding
+def base64_encode(img: np.ndarray) -> str:
+    _, buffer = cv2.imencode('.jpg', img)
+    b = base64.b64encode(buffer).decode('utf-8')
+    return b #the encoded string
+
+#Helper for image decoding to PIL Image
+def base64_decode_toImage(b64: str) -> Image:
+    
+    b64 = re.sub(r'^data:image/\w+;base64,', '', b64)
+    image_data = base64.b64decode(b64)
+    img = Image.open(io.BytesIO(image_data))
+    return img #The PIL Image
+
+#-------------------------------------------------------------------------
+# END POINT TO DETECT THE CARDS RETURNS THE CROPPED CARD 
+# AND ORIGINAL IMAGE WITH BOUNDING BOX
+#-------------------------------------------------------------------------
+
+#Validation model for output
+class CardDetection(BaseModel):
+    Frame: B64String
+    Cropped_Card: Optional[B64String]
+    Card_Detected: bool
+
+#Detection functions
+@app.post("/detect-cards-file")
+async def detectCardsFromFile(frame: UploadFile = File(...)) -> CardDetection:
+
+    content = await frame.read()
+
+    try:
+        img = Image.open(io.BytesIO(content)).convert("RGB")
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=400, detail="Invalid image data")
+
+    frame_cv = np.array(img.copy())[:, :, ::-1].copy()   # RGB -> BGR and read / write privledges
+
+    results = det_model.predict(source=frame_cv, conf=0.5, verbose=False)
+
+    crop_resized = None
+
+    #Consider only the first card detected
+    result = results[0]
+
+    for box in result.boxes:
+
+        # Bounding box coordinates
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        # Confidence and class
+        conf = float(box.conf[0])
+        cls = int(box.cls[0])
+        label = f"{det_model.names[cls]} {conf:.2f}"
+
+        # Draw box and label
+        cv2.rectangle(frame_cv, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(frame_cv, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+        #Crop the image to the card and resize
+        cropped = frame_cv[y1:y2, x1:x2]
+        crop_resized = cv2.resize(cropped, (245, 340), interpolation=cv2.INTER_CUBIC)
+
+
+    return CardDetection(
+        Frame=B64String(b64_string=base64_encode(frame_cv)),
+        Cropped_Card= B64String(b64_string=base64_encode(crop_resized)) if crop_resized is not None else None,
+        Card_Detected= crop_resized is not None
+    )
+
+#Detection functions
+@app.post("/detect-cards")
+async def detectCards(frame: B64String) -> CardDetection:
+    
+    try:
+        img = base64_decode_toImage(frame.b64_string)
+    except (base64.binascii.Error, UnidentifiedImageError) as e:
+        raise HTTPException(status_code=400, detail="Invalid image data")
+    
+    frame_cv = np.array(img.copy())[:, :, ::-1].copy()   # RGB -> BGR and read / write privledges
+
+    results = det_model.predict(source=frame_cv, conf=0.5, verbose=False)
+
+    crop_resized = None
+
+    #Consider only the first card detected
+    result = results[0]
+
+    for box in result.boxes:
+
+        # Bounding box coordinates
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        # Confidence and class
+        conf = float(box.conf[0])
+        cls = int(box.cls[0])
+        label = f"{det_model.names[cls]} {conf:.2f}"
+
+        # Draw box and label
+        cv2.rectangle(frame_cv, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(frame_cv, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+        #Crop the image to the card and resize
+        cropped = frame_cv[y1:y2, x1:x2]
+        crop_resized = cv2.resize(cropped, (245, 340), interpolation=cv2.INTER_CUBIC)
+
+
+    return CardDetection(
+        Frame=B64String(b64_string=base64_encode(frame_cv)),
+        Cropped_Card= B64String(b64_string=base64_encode(crop_resized)) if crop_resized is not None else None,
+        Card_Detected= crop_resized is not None
+    )
+
+#-------------------------------------------------------------------------
+# END POINT TO GENERATE THE EMBEDDING FOR AN IMAGE
+#-------------------------------------------------------------------------
+
+#Validation model for output
+class ImageEmbedding(BaseModel):
+    Embedding: list[float]
+
+#Encoding Function
+@app.post("/encode-card-from-b64")
+async def encodeCard(b64_string: B64String) -> ImageEmbedding:
+
+    img = base64_decode_toImage(b64_string.b64_string)
+
+    emb = encode_model.encode(img)
+
+    return  ImageEmbedding(Embedding=emb.tolist())
+
+#-------------------------------------------------------------------------
+# END POINT TO FIND THE MATCHES
+#-------------------------------------------------------------------------
+
+#Validation model for a match
+class Match(BaseModel):
+    id: str #Card ID
+    name: str # Card Name
+    score: float #Cosine similarity
+    
+#Cosine Similarity function
+def cosineSimilarity(input, reference_library, top = 1, embeddings_matrix = embedding_matrix_library):
+    
+    sims = cosine_similarity(input.reshape(1, -1), embeddings_matrix)[0]
+    top_indices = sims.argsort()[::-1][:top]
+    top_df = reference_library.iloc[top_indices].copy()
+    top_df["sim"] = sims[top_indices]
+    
+    return top_df
+
+#Cosine Similarity Function Faiss
+def cosineSimilarity_faiss(input_vector, reference_library, top=5):
+    input_vector = np.array(input_vector).reshape(1, -1)
+    faiss.normalize_L2(input_vector)  # Normalize query vector
+
+    scores, indices = index.search(input_vector, top)
+    
+    top_df = reference_library.iloc[indices[0]].copy()
+    top_df["sim"] = scores[0]  # FAISS returns similarity scores directly
+    return top_df
+
+#Matching Function
+@app.post("/match1")
+async def match1(work: ImageEmbedding) -> Match:
+
+    #Calculate
+    results = cosineSimilarity(work.Embedding, library, 1).iloc[0]
+
+    return Match(id=results["id"], name=results["name"], score=results["sim"])
+
+#Matching Function
+@app.post("/match5")
+async def match1(work: ImageEmbedding) -> list[Match]:
+
+    #Calculate
+    results = cosineSimilarity(work.Embedding, library, 5)
+
+    Matches = []
+
+    for index, row in results.iterrows():
+        Matches.append(Match(id=row["id"], name=row["name"], score=row["sim"]))
+
+    return Matches
+
+#-------------------------------------------------------------------------
+# END POINT TO DO EVERYTHING
+#-------------------------------------------------------------------------
+
+#Pipeline Validation Model
+class PipelineReturn(BaseModel):
+    Frame: B64String
+    Cropped_Card: Optional[B64String]
+    Card_Detected: bool
+    Matches: Optional[list[Match]]
+    Duration: float
+
+#Detection function
+@app.post("/pipeline-file")
+async def InferencePipeline(frame: UploadFile = File(...)) -> PipelineReturn:
+
+    #===================================================================================
+    #Detection Logic
+
+    content = await frame.read()
+
+    start_time = time.time()
+
+    try:
+        img = Image.open(io.BytesIO(content)).convert("RGB")
+    except UnidentifiedImageError:
+        return {"Error" : "Invalid Image Error"}
+
+    frame_cv = np.array(img.copy())[:, :, ::-1].copy()   # RGB -> BGR and read / write privledges
+
+    results = det_model.predict(source=frame_cv, conf=0.5, verbose=False)
+
+    crop_resized = None
+
+    #Consider only the first card detected
+    result = results[0]
+
+    #Quit if nothing detected
+    if result is None:
+        return PipelineReturn(Frame=B64String(b64_string=base64_encode(frame_cv)), 
+                              Cropped_Card = None, Card_Detected=False, Matches=None)
+
+    for box in result.boxes:
+
+        # Bounding box coordinates
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        # Confidence and class
+        conf = float(box.conf[0])
+        cls = int(box.cls[0])
+        label = f"{det_model.names[cls]} {conf:.2f}"
+
+        # Draw box and label
+        cv2.rectangle(frame_cv, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(frame_cv, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+        #Crop the image to the card and resize
+        cropped = frame_cv[y1:y2, x1:x2]
+        crop_resized = cv2.resize(cropped, (245, 340), interpolation=cv2.INTER_CUBIC)
+
+    #===================================================================================
+    #Encoding Logic
+
+    inference_img = Image.fromarray(cv2.cvtColor(crop_resized, cv2.COLOR_BGR2RGB))
+    
+    emb = encode_model.encode(inference_img)
+
+    #===================================================================================
+    #Matching Logic
+
+    results = cosineSimilarity(emb, library, 5)
+    
+    Matches = []
+
+    for index, row in results.iterrows():
+        Matches.append(Match(id=row["id"], name=row["name"], score=row["sim"]))
+
+    #===================================================================================
+    #Return
+
+    return_time = time.time() - start_time
+
+    return PipelineReturn(
+                Frame = B64String(b64_string=base64_encode(frame_cv)),
+                Cropped_Card = B64String(b64_string=base64_encode(crop_resized)) if crop_resized is not None else None,
+                Card_Detected = crop_resized is not None,
+                Matches = Matches if len(Matches) > 0 else None,
+                Duration = return_time
+            )
+
+
+#Detection function
+@app.post("/pipeline")
+async def InferencePipeline(frame: B64String) -> PipelineReturn:
+
+    #===================================================================================
+    #Detection Logic
+
+    start_time = time.time()
+
+    try:
+        img = base64_decode_toImage(frame.b64_string)
+    except (base64.binascii.Error, UnidentifiedImageError) as e:
+        raise HTTPException(status_code=400, detail="Invalid image data")
+
+    frame_cv = np.array(img.copy())[:, :, ::-1].copy()   # RGB -> BGR and read / write privledges
+
+    results = det_model.predict(source=frame_cv, conf=0.5, verbose=False)
+
+    crop_resized = None
+
+    #Consider only the first card detected
+    result = results[0]
+
+    #Quit if nothing detected
+    if result is None or result.boxes is None or len(result.boxes) == 0:
+        return PipelineReturn(Frame=B64String(b64_string=base64_encode(frame_cv)), 
+                              Cropped_Card = None, Card_Detected=False, Matches=None, Duration=time.time()-start_time)
+
+    for box in result.boxes:
+
+        # Bounding box coordinates
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        # Confidence and class
+        conf = float(box.conf[0])
+        cls = int(box.cls[0])
+        label = f"{det_model.names[cls]} {conf:.2f}"
+
+        # Draw box and label
+        cv2.rectangle(frame_cv, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(frame_cv, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+        #Crop the image to the card and resize
+        cropped = frame_cv[y1:y2, x1:x2]
+        crop_resized = cv2.resize(cropped, (245, 340), interpolation=cv2.INTER_CUBIC)
+
+    #===================================================================================
+    #Encoding Logic
+
+    inference_img = Image.fromarray(cv2.cvtColor(crop_resized, cv2.COLOR_BGR2RGB))
+    
+    emb = encode_model.encode(inference_img)
+
+    #===================================================================================
+    #Matching Logic
+
+    results = cosineSimilarity_faiss(emb, library, 5)
+    
+    Matches = []
+
+    for index, row in results.iterrows():
+        Matches.append(Match(id=row["id"], name=row["name"], score=row["sim"]))
+
+    #===================================================================================
+    #Return
+
+    return_time = time.time() - start_time
+
+    return PipelineReturn(
+                Frame = B64String(b64_string=base64_encode(frame_cv)),
+                Cropped_Card = B64String(b64_string=base64_encode(crop_resized)) if crop_resized is not None else None,
+                Card_Detected = crop_resized is not None,
+                Matches = Matches if len(Matches) > 0 else None,
+                Duration = return_time
+            )

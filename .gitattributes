@@ -1,0 +1,2 @@
+API/pk-card-match-api/MASTER_SET.parquet filter=lfs diff=lfs merge=lfs -text
+API/pk-card-match-api/card_detection.pt filter=lfs diff=lfs merge=lfs -text
