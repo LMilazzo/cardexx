@@ -6,6 +6,7 @@ import os
 import random
 import numpy as np
 
+#Custom Functions for editing and creating images for training etc...
 
 def addNoise(img, noise_level=10):
   

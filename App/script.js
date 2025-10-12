@@ -174,7 +174,7 @@ async function recurs_getResults() {
   } catch (err) {
     console.error("Error in getResults:", err);
   } finally {
-    setTimeout(recurs_getResults, 1000); // next call after everything finishes
+    setTimeout(recurs_getResults, 100); // next call after everything finishes
   }
 }
 

@@ -1,5 +1,8 @@
 from pokemontcgsdk import Card
 
+#Functions to help parse the Card class responses from the pokemontcgsdk
+
+
 def extractCore(card):
 
 
