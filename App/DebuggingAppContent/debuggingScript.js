@@ -5,14 +5,25 @@ const ctx = canvas.getContext('2d');
 const startBtn = document.getElementById('videoStart');
 const endBtn = document.getElementById("videoEnd")
 
+//The b64 string of the most current raw video frame from the media input
+const rawFrame = document.getElementById('rawFrame');
+
 //API Base URL
 const url = 'http://127.0.0.1:8000'
 
 //API Call 1 (Card Detection & Cropping)
 const detectionEndpoint = url + '/detect-cards'
+const apiResponse = document.getElementById('responseFeedback') // Raw Json Response
+const frameDetectionBox = document.getElementById('frameDetectionBox') // Frame with bounding box draw b64 string to display as video/image
+const frameDetectionCardPresent = document.getElementById('frameDetectionCardPresent') // True or false of wether a card was detected or not
+const frameDetectionCrop = document.getElementById('frameDetectionCrop') //Frame with the detected card cropped to the bounding box
 
 //API Call 2 (Card Embedding & Matching)
 const fullEndpoint = url + '/pipeline'
+const apiResponseFull = document.getElementById('responseFull')
+const matches = document.getElementById('matches')
+const detectionUsed = document.getElementById('detectionUsed')
+const cardDetected = document.getElementById('cardDetected')
 const cropUsed = document.getElementById('cropUsed')
 const callTime = document.getElementById('callTime')
 const matchesContainer = document.getElementById("matches");
@@ -39,6 +50,7 @@ async function startCamera() {
     streamStarted = true;
   } catch (err) {
     console.error('Camera access error:', err);
+    output.textContent = 'Failed to access camera: ' + err.message;
   }
 }
 
@@ -47,6 +59,7 @@ async function startCamera() {
 function updateFrame() {
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   currentFrameB64 = canvas.toDataURL('image/jpeg');
+  rawFrame.textContent = currentFrameB64;
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -58,7 +71,7 @@ function detectCard(){
     try{
 
       const detectCards_payload = {
-        b64_string: currentFrameB64
+        b64_string: rawFrame.textContent
       };
 
       fetch(detectionEndpoint, {
@@ -73,13 +86,17 @@ function detectCard(){
         return response.json();
       })
       .then(data => {
+        apiResponse.textContent = JSON.stringify(data, null, 2);
+        frameDetectionBox.src = "data:image/png;base64," + data.Frame.b64_string;
+        frameDetectionCardPresent.textContent = "Detected Content For Matching: " + data.Card_Detected;
         if (data.Cropped_Card != null){
+          frameDetectionCrop.src = "data:image/png;base64," + data.Cropped_Card.b64_string;
           cardPresent = true;
         }else {cardPresent = false; }
 
       })
       .catch(error => {
-        console.log('There was an error with the request');
+        apiResponse.textContent = 'There was an error with the request';
       })
 
     }
@@ -99,7 +116,7 @@ async function getResults() {
 
   try {
     const payload = {
-      b64_string: currentFrameB64
+      b64_string: rawFrame.textContent
     };
 
     const response = await fetch(fullEndpoint, {
@@ -115,16 +132,27 @@ async function getResults() {
 
     const data = await response.json();
 
+    apiResponseFull.textContent = JSON.stringify(data, null, 2);
+    detectionUsed.src = "data:image/png;base64," + data.Frame.b64_string;
+    cardDetected.textContent = "Detected Content: " + data.Card_Detected;
+
     if (data.Cropped_Card != null) {
       cropUsed.src = "data:image/png;base64," + data.Cropped_Card.b64_string;
     }
 
     if (data.Matches != null) {
+      matches.textContent = JSON.stringify(data.Matches, null, 2);
 
       matchesContainer.innerHTML = ""; // Clear previous
 
       data.Matches.forEach(match => {
-        const card = createMatchElement(match);
+        const card = document.createElement("div");
+        card.className = "match-card";
+        card.innerHTML = `
+          <span><strong>Name:</strong> ${match.name}</span>
+          <span><strong>ID:</strong> ${match.id}</span>
+          <span><strong>Score:</strong> ${match.score.toFixed(3)}</span>
+        `;
         matchesContainer.appendChild(card);
       });
     }
@@ -132,6 +160,7 @@ async function getResults() {
     callTime.textContent = "Call Duration: " + data.Duration.toFixed(2) + "s";
   } catch (error) {
     console.error("Error in getResults:", error);
+    apiResponseFull.textContent = 'There was an error with the request: ' + error.message;
   }
 
 }
@@ -147,25 +176,6 @@ async function recurs_getResults() {
   } finally {
     setTimeout(recurs_getResults, 100); // next call after everything finishes
   }
-}
-
-
-//-----------------------------------------------------------------------------------------------
-// Function to render each match as a styled card with image and details
-function createMatchElement(match) {
-  const card = document.createElement("div");
-  card.className = "match-card";
-
-  card.innerHTML = `
-    <img class="match-img" src="${match.image}" alt="${match.name || 'Card image'}" />
-    <div class="match-info">
-      <h3>${match.name || 'Unknown Card'}</h3>
-      <p><strong>ID:</strong> ${match.id}</p>
-      <p><strong>Score:</strong> ${match.score?.toFixed(3) || 'N/A'}</p>
-    </div>
-  `;
-
-  return card;
 }
 
 

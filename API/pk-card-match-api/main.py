@@ -196,6 +196,7 @@ async def encodeCard(b64_string: B64String) -> ImageEmbedding:
 class Match(BaseModel):
     id: str #Card ID
     name: str # Card Name
+    image: str #link to image
     score: float #Cosine similarity
     
 #Cosine Similarity function
@@ -226,7 +227,7 @@ async def match1(work: ImageEmbedding) -> Match:
     #Calculate
     results = cosineSimilarity(work.Embedding, library, 1).iloc[0]
 
-    return Match(id=results["id"], name=results["name"], score=results["sim"])
+    return Match(id=results["id"], name=results["name"], image=results["img_path_small"], score=results["sim"])
 
 #Matching Function
 @app.post("/match5")
@@ -238,7 +239,7 @@ async def match1(work: ImageEmbedding) -> list[Match]:
     Matches = []
 
     for index, row in results.iterrows():
-        Matches.append(Match(id=row["id"], name=row["name"], score=row["sim"]))
+        Matches.append(Match(id=row["id"], name=row["name"], image=results["img_path_small"], score=row["sim"]))
 
     return Matches
 
@@ -316,7 +317,7 @@ async def InferencePipeline(frame: UploadFile = File(...)) -> PipelineReturn:
     Matches = []
 
     for index, row in results.iterrows():
-        Matches.append(Match(id=row["id"], name=row["name"], score=row["sim"]))
+        Matches.append(Match(id=row["id"], name=row["name"], image=row["img_path_small"], score=row["sim"]))
 
     #===================================================================================
     #Return
@@ -392,7 +393,7 @@ async def InferencePipeline(frame: B64String) -> PipelineReturn:
     Matches = []
 
     for index, row in results.iterrows():
-        Matches.append(Match(id=row["id"], name=row["name"], score=row["sim"]))
+        Matches.append(Match(id=row["id"], name=row["name"],image=row["img_path_small"], score=row["sim"]))
 
     #===================================================================================
     #Return

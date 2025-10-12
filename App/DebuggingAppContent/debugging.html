@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pokémon Card Scanner</title>
+
+  <!-- Theme 1 -->
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <!-- Theme 2
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  -->
+    
+  <!--CSS Style sheet-->
+  <link rel="stylesheet" type="text/css" href="theme1.css">
+
+</head>
+<body>
+    <div class="app-wrapper">
+    
+    <!-- ======= TOP ROW: VIDEO / DETECTIONS / MATCHES ======= -->
+    <div class="scanner-row">
+
+      <!-- Webcam Video Section -->
+      <div class="video-section">
+        <h2 style="text-align: center;">Live Scan</h2>
+        <div class="flex-row" style="justify-content: center;">
+          <button class="videoControls" id="videoStart">Start Scan</button>
+          <button class="videoControls" id="videoEnd" style="background: linear-gradient(to right, #ff4e50, #f9d423);">End Scan</button>
+        </div>
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+      </div>
+
+      <!-- Slower accurate detection preview -->
+      <div class="detection-section">
+        <h3 id="cardDetected">Detected Content For Matching: None</h3>
+        <div class="detection-images">
+          <div>
+            <h4>Main Frame</h4>
+            <img class="FramePreview preview-img" id="detectionUsed" src="" alt="Start Scan" />
+          </div>
+          <div>
+            <h4>Cropped</h4>
+            <img class="CropPreview preview-img" id="cropUsed" src="" alt="Start Scan" />
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Matches Section (now moved up) -->
+      <div class="match-section">
+        <h2>Top 5 Matches</h2>
+        <p id="callTime">Null</p>
+        <div id="matches" class="matches-container">
+          <!-- JavaScript will inject .match-card divs here -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======= SECOND ROW: Accurate Detection + Debug ======= -->
+    <div class="scanner-row">
+
+    <!-- Fast Frame Detection Preview -->
+    <div class="detection-section">
+      <h3 id="frameDetectionCardPresent">Detected Content: None</h3>
+      <div class="detection-images">
+        <div>
+          <h4>Main Frame</h4>
+          <img class="FramePreview preview-img" id="frameDetectionBox" src="" alt="Start Scan" />
+        </div>
+        <div>
+          <h4>Cropped</h4>
+          <img class="CropPreview preview-img" id="frameDetectionCrop" src="" alt="Start Scan" />
+        </div>
+      </div>
+    </div>
+
+
+      <!-- Debug Output: Video + Detection Feedback -->
+      <div class="match-section">
+        <h2>Debug: Video Frame</h2>
+        <div class="B64String" id="rawFrame"></div>
+
+        <h2>Detection Feedback</h2>
+        <div class="B64String" id="responseFeedback"></div>
+      </div>
+
+      <!-- Full API response -->
+      <div class="match-section">
+        <h2>Matching Feedback</h2>
+        <div class="B64String" id="responseFull" style="height: 400px;"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="debuggingScript.js"></script>
+</body>
+</html>
