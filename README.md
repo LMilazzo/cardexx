@@ -13,12 +13,12 @@ This repository provides a complete pipeline for card detection, embedding gener
 - **API/pk-card-detection-API/**: Python API for card detection and retrieval.
 	- `main.py`: Main API server.
 	- `card_detection.pt`: YOLO model weights for card detection.
-	- `MASTER_SET.parquet`: Parquet file containing the reference library generated with generateEmbeddings.py .
+	- `MASTER_SET.parquet`: Parquet file containing the reference library of embeddings generated with different models.
 	- `dependencies.txt`: List of required Python packages for the API, specific versions were important to reproduce my exact results. Note that my personal device lacks a GPU so package versions were installed with this in mind so that they played nice with torch.
 	- `nginx_config`: Example Nginx configuration for deployment on AWS EC2.
 	- `README.md`: API-specific documentation for deploying on EC2.
 - **App/**: Frontend web application for card retrieval.
-	- `index.html`: Main HTML page.
+	- `app.html`: Main HTML page.
 	- `script.js`: Client-side logic for interacting with the API.
 - **DatasetsAndModelTuning/**: Resources for dataset management and YOLO model fine-tuning.
 	- `YoloFineTuning/`: Contains scripts, notebooks, images, labels, and training results for YOLO model tuning.
@@ -32,9 +32,7 @@ This repository provides a complete pipeline for card detection, embedding gener
 - **Utils/**: Utility scripts for parsing, similarity calculation, and embedding generation.
 	- `cardParser.py`: Card metadata parser.
 	- `cosineSim.py`: Cosine similarity calculations for embeddings.
-	- `generateSetEmbeddings.py`: Generate embeddings for card sets.
 	- `img_utils.py`: Image processing utilities.
-	- `FilenameToLower.py`: Filename normalization script.
 
 ## Getting Started
 
@@ -42,7 +40,6 @@ This repository provides a complete pipeline for card detection, embedding gener
 
 ```sh
 git clone https://github.com/yourusername/CLIPCardRetreival.git
-cd CLIPCardRetreival
 ```
 
 ### 2. Install Dependencies
@@ -64,7 +61,7 @@ You can then follow the ip to the local host, add /docs to the end if you want t
 
 ### 4. Use the Web App
 
-Open `App/index.html` in your browser and connect to the running API. 
+Open `App/app.html` in your browser and connect to the running API. 
 
 In `App/script.js` you may need to edit:
 
@@ -78,10 +75,10 @@ Finally I launched the web app using a VSCode live server extension.
 
 ## Model Training & Dataset Creation
 
-- Use `CreateYoloDataset.ipynb` to generate datasets for YOLO training.
+- Use `YOLODatasetCreation.ipynb` to generate datasets for YOLO training.
     - This will not work as `Images/Backgrounds` which should contain ~50-100 random background images is empty to avoid unneccessary files. `Images/Cards` which contains images of random cards from the `pokemonapisdk` is also empty for the same reason.
 - Fine-tune YOLO models in `DatasetsAndModelTuning/YoloFineTuning/trainYolo.ipynb`.
-- Generate CLIP embeddings with `generateEmbeddings.py` and `Utils/generateSetEmbeddings.py`.
+- Generate CLIP embeddings with `RefrenceLibraryCreation.ipynb`.
 
 ## Utilities
 
@@ -92,9 +89,6 @@ Finally I launched the web app using a VSCode live server extension.
 - Training results, confusion matrices, and performance curves are stored in `DatasetsAndModelTuning/YoloFineTuning/runs/`.
 - t-SNE plots and experiment notebooks are in `ProofOfConcept/`.
 
-## License
-
-This project is licensed under the MIT License.
 
 ## Contact
 
