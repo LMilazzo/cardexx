@@ -35,10 +35,11 @@ app.add_middleware(
 
 
 det_model = YOLO("card_detection.pt")
-encode_model = SentenceTransformer("clip-ViT-L-14")
+#encode_model = SentenceTransformer("clip-ViT-L-14")
+encode_model = SentenceTransformer("clip-ViT-B-16")
 
 # 1. Load and stack embeddings
-library = pd.read_parquet("MASTER_SET.parquet")
+library = pd.read_parquet("MASTER_SET_b16.parquet")
 embedding_matrix_library = np.vstack(library["embedding"].values)
 
 # 2. Normalize BEFORE adding to index
