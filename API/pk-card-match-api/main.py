@@ -36,6 +36,9 @@ app.add_middleware(
 
 det_model = YOLO("card_detection.pt")
 #encode_model = SentenceTransformer("clip-ViT-L-14")
+#encode_model = SentenceTransformer("clip-ViT-B-32")
+
+#Final Model that performed the best with accurate and quick results
 encode_model = SentenceTransformer("clip-ViT-B-16")
 
 # 1. Load and stack embeddings
