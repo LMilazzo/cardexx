@@ -6,7 +6,7 @@ const startBtn = document.getElementById('videoStart');
 const endBtn = document.getElementById("videoEnd")
 
 //API Base URL
-const url = 'api-endpoint'
+const url = '/.netlify/functions'
 
 //API Call 1 (Card Detection & Cropping)
 const detectionEndpoint = url + '/detect-cards'
