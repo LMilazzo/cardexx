@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pokémon Card Scanner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="App/appTheme.css" />
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- Header -->
+    <header>
+      <h1>Pokémon Card Scanner</h1>
+    </header>
+
+    <!-- Main Content: Left (Scanner) + Right (Matches Sidebar) -->
+    <main class="main-layout">
+      
+      <!-- Left: Video + Detection Frame -->
+      <section class="scanner-panel">
+        <div class="video-section">
+          <video id="video" autoplay playsinline></video>
+          <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+          <div class="controls">
+            <button id="videoStart">Start Scan</button>
+            <button id="videoEnd">Stop Scan</button>
+          </div>
+        </div>
+
+        <div class="frame-preview">
+          <h3>Frame Used for Classification</h3>
+          <img id="cropUsed" src="" alt="Detection Frame Preview" />
+        </div>
+      </section>
+
+      <!-- Right: Matches Sidebar -->
+      <aside class="matches-sidebar">
+        <h2>Top 5 Matches</h2>
+        <div id="callTime"></div>
+        <div id="matches" class="matches-list">
+          <!-- Match cards will be injected dynamically -->
+        </div>
+      </aside>
+
+    </main>
+  </div>
+
+  <script src="App/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+[Unit]
+Description=FastAPI app with Gunicorn
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/API
+Environment="PATH=/home/ubuntu/API/env/bin"
+ExecStart=/home/ubuntu/API/env/bin/gunicorn main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

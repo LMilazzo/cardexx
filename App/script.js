@@ -6,7 +6,7 @@ const startBtn = document.getElementById('videoStart');
 const endBtn = document.getElementById("videoEnd")
 
 //API Base URL
-const url = 'http://127.0.0.1:8000'
+const url = 'api-endpoint'
 
 //API Call 1 (Card Detection & Cropping)
 const detectionEndpoint = url + '/detect-cards'

@@ -12,13 +12,11 @@ create nginx config file in /etc/nginx/sites-enabled/fastapi_nginx
 
 copy paste contents here adding your public ipv4
 
-esc :wq enter
-
 sudo service nginx restart
 
 git clone repo
 
-cd to repo 
+scp needed files
 
 sudo apt install python3.12-venv
 
@@ -32,18 +30,18 @@ sudo apt update
 sudo apt install -y libgl1
 
 pip intall python-multipart
+pip install fastparquet
+pip install guvicorn
 
-leave ssh with exit
+make systemmd file
+sudo nano /etc/systemd/system/fastapi.service
 
-copy over model pt with:
-   scp -i "pem_path" "pt_path" ubuntu@DNS/home/ubuntu/
+sudo systemctl daemon-reload
+sudo systemctl start fastapi
+sudo systemctl enable fastapi
 
-ssh
-
-sudo apt install git-lfs
-
-git lfs pull
-
-uvicorn main:app
+Check
+sudo systemctl status fastapi
+sudo journalctl -u fastapi -f
 
 
