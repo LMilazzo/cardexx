@@ -1,6 +1,6 @@
 export default async function(event, context) {
 
-  const apiUrl = process.env.EC2_API_PUBLIC_IPv4;
+  const apiUrl = Netlify.env.get("EC2_API_PUBLIC_IPv4");
 
   try {
     const response = await fetch(`${apiUrl}/detect-cards`, {
