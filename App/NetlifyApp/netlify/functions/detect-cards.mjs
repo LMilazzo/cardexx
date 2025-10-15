@@ -1,9 +1,9 @@
-exports.handler = async function(event, context) {
+export default async function(event, context) {
 
   const apiUrl = process.env.EC2_API_PUBLIC_IPv4;
 
   try {
-    const response = await fetch(`${apiUrl}/pipeline`, {
+    const response = await fetch(`${apiUrl}/detect-cards`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: event.body
