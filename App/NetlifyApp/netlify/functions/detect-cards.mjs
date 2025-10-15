@@ -18,7 +18,7 @@ export default async function(event, context) {
     });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: 'Server error' }), {
+    return new Response(JSON.stringify({ error: apiUrl }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
