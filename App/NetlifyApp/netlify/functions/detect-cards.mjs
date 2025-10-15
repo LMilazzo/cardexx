@@ -1,4 +1,4 @@
-export async function handler(event, context) {
+exports.handler = async function(event, context) {
 
   const apiUrl = process.env.EC2_API_PUBLIC_IPv4;
 
