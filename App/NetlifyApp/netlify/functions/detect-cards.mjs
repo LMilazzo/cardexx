@@ -1,9 +1,11 @@
+import fetch from 'node-fetch';
+
 export async function handler(event, context) {
 
   const apiUrl = process.env.EC2_API_PUBLIC_IPv4;
 
   try {
-    const response = await fetch(`${apiUrl}/pipeline`, {
+    const response = await fetch(`${apiUrl}/detect-cards`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: event.body
