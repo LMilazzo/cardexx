@@ -1,6 +1,3 @@
-import fetch from 'node-fetch';
-
-
 export async function handler(event, context) {
 
   const apiUrl = process.env.EC2_API_PUBLIC_IPv4;
