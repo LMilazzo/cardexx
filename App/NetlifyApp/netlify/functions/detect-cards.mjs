@@ -6,7 +6,8 @@ export default async function(event, context) {
     const response = await fetch(`${apiUrl}/detect-cards`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: event.body
+      body: event.body,
+      duplex: 'half'
     });
 
     const data = await response.json();
@@ -18,7 +19,7 @@ export default async function(event, context) {
     });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: apiUrl }), {
+    return new Response(JSON.stringify({ error: "Server Error"}), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
