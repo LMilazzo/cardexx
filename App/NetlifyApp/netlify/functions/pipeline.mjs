@@ -7,7 +7,7 @@ export default async function(event, context) {
     const response = await fetch(`${apiUrl}/pipeline`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(event.body),
+      body: event.body,
       duplex: 'half'
     });
 
