@@ -1,12 +1,18 @@
+
+const tcgdex = new TCGdex('en');
+
+
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 const startBtn = document.getElementById('videoStart');
 const endBtn = document.getElementById("videoEnd")
+const snapBtn = document.getElementById("snap")
+const prev = document.getElementById("preview")
 
 //API Base URL
-const url = ''
+const url = '/.netlify/functions'
 
 //API Call 1 (Card Detection & Cropping)
 const detectionEndpoint = url + '/detect-cards'
@@ -23,6 +29,7 @@ let intervalID_fetch_detect = null; //Interval for the card detection api reques
 let isScanning = false;
 let cardPresent = false;
 let currentFrameB64 = null
+let snapFrame = false;
 
 //-----------------------------------------------------------------------------------------------
 //A function to start the camera with an available media outlet
@@ -53,7 +60,8 @@ function updateFrame() {
 //A function to periodically call the detection api endpoint
 function detectCard(){
 
-  if (intervalID_fetch_detect){
+  console.log("DetectCardRunning: " + snapFrame)
+  if (intervalID_fetch_detect || snapFrame){
 
     try{
 
@@ -94,8 +102,13 @@ function detectCard(){
 //-----------------------------------------------------------------------------------------------
 //A function to periodically call the full process api endpoint
 async function getResults() {
-  if (!isScanning) return;
-  if (!cardPresent) return;
+  console.log("getResults: " + snapFrame)
+
+  if (!isScanning || !cardPresent){
+    if (!snapFrame){
+      return
+    }
+  }
 
   try {
     const payload = {
@@ -123,10 +136,11 @@ async function getResults() {
 
       matchesContainer.innerHTML = ""; // Clear previous
 
-      data.Matches.forEach(match => {
-        const card = createMatchElement(match);
+      for (const match of data.Matches){
+        const card = await createMatchElement(match);
         matchesContainer.appendChild(card);
-      });
+      }
+
     }
 
     callTime.textContent = "Call Duration: " + data.Duration.toFixed(2) + "s";
@@ -149,30 +163,94 @@ async function recurs_getResults() {
   }
 }
 
-
 //-----------------------------------------------------------------------------------------------
 // Function to render each match as a styled card with image and details
-function createMatchElement(match) {
+async function createMatchElement(match) {
   const card = document.createElement("div");
   card.className = "match-card";
+
+  const pricing = await getCardPricingElement(match.id);
+
+  pricingElement = ``;
+
+  if (pricing.Error !== undefined){
+    pricingElement = `No Pricing Data Found`;  
+  } else{
+
+    n = ``;
+    h = ``;
+    rH = ``;
+
+    if (pricing.normal !== "no data"){
+      n = `Normal- ${pricing.normal} `;
+    }
+    if (pricing.holofoil !== "no data"){
+      h = `Holo- ${pricing.holofoil} `;
+    }
+    if (pricing.reverseHolofoil !== "no data"){
+      rH = `Rev Holo- ${pricing.reverseHolofoil} `;
+    }
+
+    pricingElement = n + h + rH
+    console.log(pricingElement)
+
+  }
 
   card.innerHTML = `
     <img class="match-img" src="${match.image}" alt="${match.name || 'Card image'}" />
     <div class="match-info">
       <h3>${match.name || 'Unknown Card'}</h3>
-      <p><strong>ID:</strong> ${match.id}</p>
+      <div style="display: flex; align-items: center; justify-content: flex-start; gap: 30px;">
+        <p><strong>ID:</strong> ${match.id}</p>
+        <p><strong>Market Values:</strong> ${pricingElement}</p>
+      </div>
       <p><strong>Score:</strong> ${match.score?.toFixed(3) || 'N/A'}</p>
+      
     </div>
   `;
 
-  return card;
+   return card;
 }
 
+//-----------------------------------------------------------------------------------------------
+// Function to render each match as a styled card with image and details
+
+async function getCardPricingElement(cardId) {
+  const container = document.createElement('div');
+  container.className = 'card-pricing';
+
+  try {
+    const card = await tcgdex.fetch('cards', cardId);
+
+    if (!card?.pricing?.tcgplayer) {
+      return {"Error" : "No Data"}
+    }
+
+    const prices = card.pricing.tcgplayer;
+    const getPrice = (key) =>
+      prices?.[key]?.marketPrice !== undefined
+        ? `$${prices[key].marketPrice}`
+        : 'no data';
+
+    const holofoil = getPrice('holofoil');
+    const normal = getPrice('normal');
+    const reverseHolofoil = getPrice('reverse-holofoil');
+
+    return {"holofoil" : holofoil, "normal" : normal, "reverseHolofoil" : reverseHolofoil}
+
+  } catch (err) {
+    console.error("Couldn't get pricing:", err);
+    return {"Error" : "No Data"}
+  }
+}
 
 //-----------------------------------------------------------------------------------------------
 //Event listener for the start scan button starts the scan by setting intervals for video frame
 //collection and api call functions 
 startBtn.addEventListener('click', async () => {
+
+  snapFrame = false;
+
   await startCamera(); 
 
   if (!intervalID_video){
@@ -188,12 +266,13 @@ startBtn.addEventListener('click', async () => {
     recurs_getResults();
   }
 
-
 });
 
 //-----------------------------------------------------------------------------------------------
 //Event listener for the end scan button that pauses all intervals
 endBtn.addEventListener('click', async() => {
+
+  snapFrame = false;
 
   if (video.srcObject) {
     const tracks = video.srcObject.getTracks();
@@ -215,3 +294,39 @@ endBtn.addEventListener('click', async() => {
   streamStarted = false;
 
 });
+
+//-----------------------------------------------------------------------------------------------
+//Event listener for the snap scan button takes and processes just a snapshot
+snapBtn.addEventListener('click', async() => {
+
+  isScanning = false;
+
+  if (intervalID_video) {
+    clearInterval(intervalID_video);
+    intervalID_video = null;
+  }
+  if (intervalID_fetch_detect) {
+    clearInterval(intervalID_fetch_detect);
+    intervalID_fetch_detect = null;
+  }
+
+  streamStarted = false;
+
+  snapFrame = true;
+
+  updateFrame();
+  detectCard();
+  getResults();
+
+});
+
+//-----------------------------------------------------------------------------------------------
+//Event listener for the Preview button that just displays the camera content
+prev.addEventListener('click', async() => {
+  
+  if (streamStarted) return;
+
+  await startCamera(); 
+
+});
+
