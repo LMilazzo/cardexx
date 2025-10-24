@@ -3,8 +3,8 @@ from pokemontcgsdk import Card
 #Functions to help parse the Card class responses from the pokemontcgsdk
 
 
+#Returns the core data as a python list
 def extractCore(card):
-
 
     c = [
             card.id, 
@@ -14,19 +14,18 @@ def extractCore(card):
             card.set.id, 
             card.images.large, 
             card.images.small,
-            serialize_card(card)
+            serialize_card(card) #Json dump of the card
         ]
 
 
     return c
 
-
+#Json dump into python serilization of class
+#Recursively convert any Python object into JSON-serializable dicts/lists/primitives.
+#Handles class instances, lists, dicts, and primitives.
 def serialize_card(obj):
-    """
-    Recursively convert any Python object into JSON-serializable dicts/lists/primitives.
-    Handles class instances, lists, dicts, and primitives.
-    """
-    # If it's a primitive type, just return it
+
+    # If it's a primitive type return
     if obj is None or isinstance(obj, (int, float, str, bool)):
         return obj
 

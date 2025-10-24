@@ -16,3 +16,6 @@ embed the frames as a vector and cosine similarity is calculated to determine wh
 ## Other Files
 
 Also included in this repo are notebooks that were used for dataset creation and testing.
+
+
+<iframe src="TSNE_PLOTLY.html" width="800" height="600"></iframe>

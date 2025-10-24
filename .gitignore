@@ -5,3 +5,8 @@ __pycache__/
 # Local Netlify folder
 .netlify
 .env
+#Jupyter NoteBooks for Data Creation
+RefrenceLibraryCreation.ipynb
+YOLODatasetCreation.ipynb
+#Proof of concept Exploratory Analysis
+ProofOfConcept/

@@ -8,8 +8,8 @@ const endBtn = document.getElementById("videoEnd")
 //The b64 string of the most current raw video frame from the media input
 const rawFrame = document.getElementById('rawFrame');
 
-//API Base URL
-const url = 'http://127.0.0.1:8000'
+//API Base URL for local host testing
+const url = ''
 
 //API Call 1 (Card Detection & Cropping)
 const detectionEndpoint = url + '/detect-cards'

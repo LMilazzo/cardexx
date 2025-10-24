@@ -4,7 +4,7 @@ import os
 
 # Load the model
 print("Current directory:", os.getcwd())
-model = YOLO("Datasets/YoloFineTuning/runs/detect/train2/weights/best.pt")  # Adjust if needed
+model = YOLO("runs/detect/train2/weights/best.pt")
 
 # Open webcam
 cap = cv2.VideoCapture(0)
@@ -14,19 +14,22 @@ if not cap.isOpened():
     print("Error: Could not open webcam.")
     exit()
 
+#Main Loop
 while True:
     success, frame = cap.read()
     if not success:
         break
 
-    # Run detection (disable show=True to avoid flashing)
+    # Run detection
     results = model.predict(source=frame, conf=0.1, verbose=False)
 
     # Draw results manually
     for result in results:
         for box in result.boxes:
+            
             # Bounding box coordinates
             x1, y1, x2, y2 = map(int, box.xyxy[0])
+            
             # Confidence and class
             conf = float(box.conf[0])
             cls = int(box.cls[0])
@@ -38,11 +41,12 @@ while True:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
     # Show frame in a persistent window
-    cv2.imshow("YOLOv8 Webcam Detection", frame)
+    cv2.imshow("YOLO Webcam Detection", frame)
 
-    # Press 'q' to exit
+    # Quit
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
+#Close
 cap.release()
 cv2.destroyAllWindows()

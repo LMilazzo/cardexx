@@ -1,5 +1,6 @@
 from pathlib import Path
 
+#Used To destroy all artificially training images to create new training sets
 
 def purgeSubFolder(folder):
 
@@ -7,8 +8,6 @@ def purgeSubFolder(folder):
 
     for file in folder.iterdir():
         if file.is_file():
-            print(file)
-            break
             file.unlink()
 
 purgeSubFolder("Datasets\Yolo Fine Tuning\Images\train")

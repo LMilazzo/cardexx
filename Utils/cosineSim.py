@@ -1,6 +1,7 @@
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 
+#Cosine Similarity functoin used for testing. 
 
 def cSim(input, refrence, top = 1):
     

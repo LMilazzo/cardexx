@@ -1,3 +1,6 @@
+# Note To Self EC2 Implementation Steps
+
+```
 Launch EC2 instance
 
 SSH into instance 
@@ -43,5 +46,5 @@ sudo systemctl enable fastapi
 Check
 sudo systemctl status fastapi
 sudo journalctl -u fastapi -f
-
+```
 

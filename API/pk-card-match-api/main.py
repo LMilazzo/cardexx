@@ -20,38 +20,41 @@ import re
 #Setup
 app = FastAPI()
 
+#Additionally Add the final frontend origin 
 origins = [
     "http://127.0.0.1:5500",
-    "http://localhost:5500",
+    "http://localhost:5500"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,     # allow your frontend origin(s)
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],       # allow POST, OPTIONS, etc.
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
+#Card Detection Model
 det_model = YOLO("card_detection.pt")
-#encode_model = SentenceTransformer("clip-ViT-L-14")
-#encode_model = SentenceTransformer("clip-ViT-B-32")
 
+#Embedding Model
+#encode_model = SentenceTransformer("clip-ViT-L-14") OLD Model
+#encode_model = SentenceTransformer("clip-ViT-B-32") OLD Model
 #Final Model that performed the best with accurate and quick results
 encode_model = SentenceTransformer("clip-ViT-B-16")
 
-# 1. Load and stack embeddings
+#Library Setup
+#Load and stack embeddings
 library = pd.read_parquet("MASTER_SET_b16.parquet")
 embedding_matrix_library = np.vstack(library["embedding"].values)
 
-# 2. Normalize BEFORE adding to index
+#Normalize embeddings
 faiss.normalize_L2(embedding_matrix_library)
 
-# 3. Create FAISS index for cosine similarity
+#Create Faiss index to run Cosine Sim faster
 dimension = embedding_matrix_library.shape[1]
-index = faiss.IndexFlatIP(dimension)  # Inner Product
-index.add(embedding_matrix_library)   # Now they're normalized
+index = faiss.IndexFlatIP(dimension)
+index.add(embedding_matrix_library)
 
 #-------------------------------------------------------------------------
 
@@ -128,7 +131,7 @@ async def detectCardsFromFile(frame: UploadFile = File(...)) -> CardDetection:
         Card_Detected= crop_resized is not None
     )
 
-#Detection functions
+#Detection functions PRODUCTION 
 @app.post("/detect-cards")
 async def detectCards(frame: B64String) -> CardDetection:
     
@@ -333,7 +336,7 @@ async def InferencePipeline(frame: UploadFile = File(...)) -> PipelineReturn:
             )
 
 
-#Detection function
+#Detection function PRODUCTION
 @app.post("/pipeline")
 async def InferencePipeline(frame: B64String) -> PipelineReturn:
 

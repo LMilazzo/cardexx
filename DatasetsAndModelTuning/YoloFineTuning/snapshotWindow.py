@@ -7,8 +7,8 @@ model = YOLO("runs/detect/train2/weights/best.pt")
 
 # Open webcam
 cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)  # set width
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)  # set height
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) 
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)  
 
 # Directory to save snapshots
 snapshot_dir = "windowTesting/snapshots"
@@ -16,6 +16,7 @@ os.makedirs(snapshot_dir, exist_ok=True)
 snapshot_count = 0
 snapshot_taken = False
 
+#Main Loop
 while True:
     success, frame = cap.read()
     if not success:
@@ -24,9 +25,7 @@ while True:
     # Run detection (returns a list of results, one per image - here just one frame)
     results = model.predict(source=frame, conf=0.75, verbose=False)  # verbose=False to reduce output
 
-    # Process detections
     for result in results:
-        # result.boxes.xyxy contains bounding boxes in [x1, y1, x2, y2] format
         boxes = result.boxes.xyxy.cpu().numpy() if hasattr(result, "boxes") else []
         
         for box in boxes:
@@ -42,9 +41,9 @@ while True:
             print(f"Saved snapshot: {snapshot_path}")
             snapshot_count += 1            
 
-            # Optional: draw box on original frame for display
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
+            #Return after frame has been cropped
             snapshot_taken = True
             break
         
@@ -56,9 +55,10 @@ while True:
     # Show frame with bounding boxes
     cv2.imshow("YOLO Detection", frame)
 
-    # Press 'q' to quit
+    # Quit
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
+#End Camera
 cap.release()
 cv2.destroyAllWindows()
