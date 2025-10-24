@@ -31,4 +31,4 @@ That is why instead I took the approach of finding a set of 'perfect' digital ca
 
 Below is a visualization of these embeddings on a set of ~ 40 different cards. The diamonds represent the embeddings of the digital images and the circles are images that I took on an IPhone of the matching cards. Color represents the card ID where points of the same color are images of the same card. This wplot was used in my preliminary exploration and served as my main proof that this system will work as we can see the captured images are correctly grouped around the ground truth images in this TSNE feature reduction plot.
 
-![My Plotly chart](plot.png)
+![TSNE PLOT](TSNE_PLOTLY.png)
